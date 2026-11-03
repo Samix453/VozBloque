@@ -1,0 +1,21 @@
+{
+	"schemaVersion": 1,
+	"id": "vozbloque",
+	"version": "${version}",
+	"name": "VozBloque",
+	"description": "Minecraft pero si decimos el bloque se borra. Reconocimiento de voz offline en español: di una palabra del nombre de un bloque y desaparece a tu alrededor.",
+	"authors": ["Samix453"],
+	"license": "MIT",
+	"icon": "assets/vozbloque/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": ["com.samix.vozbloque.VozBloque"],
+		"client": ["com.samix.vozbloque.client.VozBloqueClient"]
+	},
+	"depends": {
+		"fabricloader": ">=0.14.21",
+		"minecraft": "~1.20.1",
+		"java": ">=17",
+		"fabric-api": "*"
+	}
+}
