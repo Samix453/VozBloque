@@ -74,6 +74,7 @@ public final class MotorVoz implements Runnable {
 		this.carpeta = carpeta;
 	}
 
+	/** null = modo libre (español completo). */
 	public void ponerGramatica(String json) {
 		this.gramatica = json;
 	}
@@ -139,7 +140,7 @@ public final class MotorVoz implements Runnable {
 		try {
 			linea.start();
 			while (!reiniciarMicro) {
-				String g = cfg.modoGramatica ? gramatica : null;
+				String g = gramatica;
 				if (rec == null || !java.util.Objects.equals(g, gramaticaActual)) {
 					if (rec != null) vosk.vosk_recognizer_free(rec);
 					if (g != null) {

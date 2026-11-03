@@ -71,7 +71,7 @@ public class VozBloqueClient implements ClientModInitializer {
 	private static void reconstruirIndice(Minecraft mc) {
 		try {
 			indice = new IndiceBloques(mc.getResourceManager(), config);
-			motor.ponerGramatica(indice.gramaticaJson());
+			motor.ponerGramatica(indice.gramaticaJson(config.modo));
 			LOG.info("Índice de bloques listo: {} bloques (español {})", indice.numBloques(),
 					indice.espanolEncontrado() ? "OK" : "NO encontrado, se usa el idioma del juego");
 		} catch (Exception e) {
@@ -258,6 +258,10 @@ public class VozBloqueClient implements ClientModInitializer {
 											ctx.getSource().sendFeedback(Component.literal("Micrófono: " + (config.microfono.isBlank() ? "predeterminado" : config.microfono)).withStyle(ChatFormatting.GREEN));
 											return 1;
 										})))
+						.then(ClientCommandManager.literal("modo")
+								.then(modo("mixto", "palabras de bloques + conversación (recomendado)"))
+								.then(modo("bloques", "solo palabras de bloques"))
+								.then(modo("libre", "español completo")))
 						.then(ClientCommandManager.literal("silenciar").executes(ctx -> {
 							alternarSilencio(Minecraft.getInstance());
 							return 1;
@@ -273,11 +277,22 @@ public class VozBloqueClient implements ClientModInitializer {
 		));
 	}
 
+	private static com.mojang.brigadier.builder.LiteralArgumentBuilder<net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource> modo(String nombre, String desc) {
+		return ClientCommandManager.literal(nombre).executes(ctx -> {
+			config.modo = nombre;
+			config.guardar();
+			IndiceBloques idx = indice();
+			if (idx != null) motor.ponerGramatica(idx.gramaticaJson(nombre));
+			ctx.getSource().sendFeedback(Component.literal("Modo de voz: " + nombre + " (" + desc + ")").withStyle(ChatFormatting.GREEN));
+			return 1;
+		});
+	}
+
 	/** Copia los valores sobre el objeto existente (el hilo de voz guarda la referencia). */
 	private static void copiarConfig(ConfigCliente n) {
 		config.microfono = n.microfono;
 		config.reaccionRapida = n.reaccionRapida;
-		config.modoGramatica = n.modoGramatica;
+		config.modo = n.modo;
 		config.coincidirGenero = n.coincidirGenero;
 		config.palabrasIgnoradas = n.palabrasIgnoradas;
 		config.esperaRepeticionMs = n.esperaRepeticionMs;
@@ -290,10 +305,11 @@ public class VozBloqueClient implements ClientModInitializer {
 		IndiceBloques idx = indice();
 		return Component.literal("[VozBloque] ").withStyle(ChatFormatting.GOLD)
 				.append(Component.literal("Estado: " + motor.estado + (motor.detalle.isEmpty() ? "" : " – " + motor.detalle)
+						+ "\nModo: " + config.modo
 						+ "\nMicro: " + motor.microUsado + (motor.silenciado ? " (silenciado)" : "")
 						+ "\nBloques en el índice: " + (idx == null ? 0 : idx.numBloques())
 						+ (idx != null && !idx.espanolEncontrado() ? " (¡no se encontró el español!)" : "")
-						+ "\nComandos: /voz probar <frase> · /voz buscar <palabra> · /voz micros · /voz micro <nombre> · /voz silenciar · /voz recargar")
+						+ "\nComandos: /voz probar <frase> · /voz buscar <palabra> · /voz modo mixto|bloques|libre · /voz micros · /voz micro <nombre> · /voz silenciar · /voz recargar")
 						.withStyle(ChatFormatting.WHITE));
 	}
 }

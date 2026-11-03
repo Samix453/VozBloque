@@ -21,10 +21,12 @@ public class ConfigCliente {
 	/** Reaccionar mientras aún estás hablando (más rápido) en vez de esperar a que termines la frase. */
 	public boolean reaccionRapida = true;
 	/**
-	 * Si es true, el reconocedor SOLO entiende palabras de bloques (más preciso con los bloques,
-	 * pero puede confundir otras palabras con bloques). Si es false, entiende español normal.
+	 * Cómo escucha el reconocedor:
+	 *  "mixto"   = palabras de bloques + palabras comunes de conversación (recomendado)
+	 *  "bloques" = SOLO palabras de bloques (detecta muy bien los bloques, pero confunde más cosas con bloques)
+	 *  "libre"   = español completo (entiende todo, pero falla más con los nombres de bloques)
 	 */
-	public boolean modoGramatica = false;
+	public String modo = "mixto";
 	/** "negro" también borra cosas "negras", "rojo" las "rojas", etc. */
 	public boolean coincidirGenero = true;
 	/** Palabras que nunca borran nada (artículos, preposiciones...). */
@@ -58,6 +60,7 @@ public class ConfigCliente {
 		if (c == null) c = new ConfigCliente();
 		if (c.palabrasIgnoradas == null) c.palabrasIgnoradas = new ArrayList<>();
 		if (c.microfono == null) c.microfono = "";
+		if (c.modo == null || !List.of("mixto", "bloques", "libre").contains(c.modo)) c.modo = "mixto";
 		if (c.urlModelo == null || c.urlModelo.isBlank()) c.urlModelo = new ConfigCliente().urlModelo;
 		c.guardar();
 		return c;

@@ -127,14 +127,9 @@ public final class IndiceBloques {
 		return nombres.size();
 	}
 
-	/** Gramática JSON para Vosk: ["piedra", "tierra", ..., "[unk]"] */
-	public String gramaticaJson() {
-		List<String> lista = new ArrayList<>(vocabulario);
-		StringBuilder sb = new StringBuilder("[");
-		for (String w : lista) {
-			sb.append('"').append(w.replace("\\", "").replace("\"", "")).append("\",");
-		}
-		sb.append("\"[unk]\"]");
-		return sb.toString();
+	/** Gramática JSON para Vosk según el modo, o null para el modo libre. */
+	public String gramaticaJson(String modo) {
+		if ("libre".equals(modo)) return null;
+		return PalabrasComunes.gramatica(vocabulario, "mixto".equals(modo));
 	}
 }
