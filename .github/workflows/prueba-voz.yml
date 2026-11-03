@@ -1,6 +1,5 @@
 name: prueba-voz
 on:
-  push:
   workflow_dispatch:
 
 jobs:

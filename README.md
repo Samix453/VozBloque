@@ -26,6 +26,13 @@ Cuando ponga **● Escuchando**, ya está.
 - `/voz probar <frase>` – prueba sin hablar, como si lo hubieras dicho.
 - `/voz buscar <palabra>` – qué bloques borraría esa palabra.
 - `/voz micros` y `/voz micro <nombre>` – elegir micrófono si no coge el bueno.
+- `/voz modo mixto|bloques|libre` – cómo escucha:
+  - **mixto** (por defecto): entiende palabras de bloques y conversación normal. El que mejor funciona.
+  - **bloques**: solo palabras de bloques. Detecta todos los bloques, pero cualquier cosa que digáis puede «sonar» a bloque.
+  - **libre**: español completo. Casi no hay falsos positivos, pero se le escapan más bloques.
+
+Si arriba a la izquierda pone que no encuentra el micrófono: en Windows, *Configuración → Privacidad → Micrófono*
+y activa «Permitir que las aplicaciones de escritorio accedan al micrófono».
 
 Comandos del servidor (operador):
 
@@ -35,7 +42,7 @@ Comandos del servidor (operador):
 
 ## Configuración
 
-- `config/vozbloque-cliente.json`: palabras ignoradas (por defecto «de», «la», «bloque»…), reacción rápida,
+- `config/vozbloque-cliente.json`: modo, palabras ignoradas (por defecto «de», «la», «bloque»…), reacción rápida,
   masculino/femenino, micrófono…
 - `config/vozbloque-servidor.json`: radio, zona, bloques protegidos (por defecto Piedra base y el portal del End,
   para que el reto se pueda terminar), bloques por tick.
