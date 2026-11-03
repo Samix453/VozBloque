@@ -25,7 +25,7 @@ jobs:
           cp -r build/classes/java/main build/classes/java/client prueba/
           CP="prueba/main:prueba/client:$(ls prueba/lib/*.jar | tr '\n' ':')"
           javac --release 17 -encoding UTF-8 -cp "$CP" -d prueba/ci ci/PruebaVosk.java
-          espeak-ng -v es -s 130 -w voz.wav "vamos a picar piedra y luego tierra"
+          espeak-ng -v es -s 120 -g 12 -w voz.wav "quiero piedra. ahora tierra. también arena."
           ffmpeg -loglevel error -i voz.wav -ar 16000 -ac 1 prueba/frase16k.wav
           ffmpeg -loglevel error -i voz.wav -ar 48000 -ac 1 prueba/frase48k.wav
       - uses: actions/upload-artifact@v4
