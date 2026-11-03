@@ -7,6 +7,8 @@ import com.google.gson.JsonParser;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import net.fabricmc.loader.api.FabricLoader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
@@ -37,6 +39,8 @@ import java.util.zip.ZipInputStream;
  * La primera vez descarga el modelo de voz (~40 MB) y la librería nativa de Vosk.
  */
 public final class MotorVoz implements Runnable {
+	private static final Logger LOG = LoggerFactory.getLogger("VozBloque/Voz");
+
 	public enum Estado { INICIANDO, DESCARGANDO, CARGANDO, ESCUCHANDO, ERROR }
 
 	public record Reconocido(String texto, boolean parcial) {}
@@ -60,9 +64,14 @@ public final class MotorVoz implements Runnable {
 	private final Path carpeta;
 
 	public MotorVoz(ConfigCliente cfg) {
+		this(cfg, FabricLoader.getInstance().getGameDir().resolve("vozbloque"));
+	}
+
+	/** Constructor sin Fabric (para las pruebas automáticas). */
+	public MotorVoz(ConfigCliente cfg, Path carpeta) {
 		this.cfg = cfg;
 		this.silenciado = cfg.empezarSilenciado;
-		this.carpeta = FabricLoader.getInstance().getGameDir().resolve("vozbloque");
+		this.carpeta = carpeta;
 	}
 
 	public void ponerGramatica(String json) {
@@ -76,7 +85,6 @@ public final class MotorVoz implements Runnable {
 	@Override
 	public void run() {
 		try {
-			Files.createDirectories(carpeta);
 			VoskLib vosk = cargarNativos();
 			Path modelo = asegurarModelo();
 
@@ -94,7 +102,7 @@ public final class MotorVoz implements Runnable {
 		} catch (Throwable t) {
 			estado = Estado.ERROR;
 			detalle = "Error de voz: " + t.getMessage();
-			VozBloqueClient.LOG.error("El reconocimiento de voz ha fallado", t);
+			LOG.error("El reconocimiento de voz ha fallado", t);
 		}
 	}
 
@@ -112,7 +120,7 @@ public final class MotorVoz implements Runnable {
 					break;
 				}
 			} catch (Exception e) {
-				VozBloqueClient.LOG.debug("No se pudo abrir el micro a {} Hz: {}", f, e.toString());
+				LOG.debug("No se pudo abrir el micro a {} Hz: {}", f, e.toString());
 			}
 		}
 		if (linea == null) {
@@ -122,7 +130,7 @@ public final class MotorVoz implements Runnable {
 			return;
 		}
 
-		VozBloqueClient.LOG.info("Micrófono abierto: {} a {} Hz", microUsado, frecuencia);
+		LOG.info("Micrófono abierto: {} a {} Hz", microUsado, frecuencia);
 		String gramaticaActual = null;
 		Pointer rec = null;
 		byte[] buf = new byte[(int) (frecuencia / 10) * 2]; // ~100 ms
@@ -250,7 +258,8 @@ public final class MotorVoz implements Runnable {
 
 	// ---------------------------------------------------------------- descargas
 
-	private Path asegurarModelo() throws Exception {
+	public Path asegurarModelo() throws Exception {
+		Files.createDirectories(carpeta);
 		String url = cfg.urlModelo;
 		String archivo = url.substring(url.lastIndexOf('/') + 1);
 		String nombre = archivo.endsWith(".zip") ? archivo.substring(0, archivo.length() - 4) : archivo;
@@ -273,7 +282,8 @@ public final class MotorVoz implements Runnable {
 		return real;
 	}
 
-	private VoskLib cargarNativos() throws Exception {
+	public VoskLib cargarNativos() throws Exception {
+		Files.createDirectories(carpeta);
 		String os = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
 		String arch = System.getProperty("os.arch", "").toLowerCase(Locale.ROOT);
 		boolean arm = arch.contains("aarch64") || arch.contains("arm64");
@@ -347,7 +357,7 @@ public final class MotorVoz implements Runnable {
 	}
 
 	private void descargar(String url, Path destino) throws Exception {
-		VozBloqueClient.LOG.info("Descargando {}", url);
+		LOG.info("Descargando {}", url);
 		HttpRequest req = HttpRequest.newBuilder(URI.create(url)).header("User-Agent", "VozBloque-MinecraftMod").GET().build();
 		HttpResponse<InputStream> resp = http().send(req, HttpResponse.BodyHandlers.ofInputStream());
 		if (resp.statusCode() != 200) throw new IOException("HTTP " + resp.statusCode() + " al descargar " + url);

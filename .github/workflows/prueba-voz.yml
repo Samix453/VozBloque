@@ -1,0 +1,65 @@
+name: prueba-voz
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  preparar:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+      - name: compilar mod
+        run: chmod +x ./gradlew && ./gradlew build
+      - name: preparar prueba
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq espeak-ng ffmpeg > /dev/null
+          mkdir -p prueba/lib
+          for p in 'jna-5.*.jar' 'gson-2.*.jar' 'slf4j-api-*.jar'; do
+            find ~/.gradle/caches -name "$p" ! -name '*sources*' ! -name '*platform*' | head -1 | xargs -I{} cp {} prueba/lib/
+          done
+          ls prueba/lib
+          cp -r build/classes/java/main build/classes/java/client prueba/
+          CP="prueba/main:prueba/client:$(ls prueba/lib/*.jar | tr '\n' ':')"
+          javac --release 17 -encoding UTF-8 -cp "$CP" -d prueba/ci ci/PruebaVosk.java
+          espeak-ng -v es -s 130 -w voz.wav "vamos a picar piedra y luego tierra"
+          ffmpeg -loglevel error -i voz.wav -ar 16000 -ac 1 prueba/frase16k.wav
+          ffmpeg -loglevel error -i voz.wav -ar 48000 -ac 1 prueba/frase48k.wav
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prueba
+          path: prueba/
+
+  probar:
+    needs: preparar
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: prueba
+          path: prueba
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - name: reconocer (16 kHz)
+        shell: bash
+        run: |
+          SEP=':'; [ "$RUNNER_OS" = "Windows" ] && SEP=';'
+          CP="prueba/ci${SEP}prueba/main${SEP}prueba/client"
+          for j in prueba/lib/*.jar; do CP="$CP${SEP}$j"; done
+          java -cp "$CP" PruebaVosk vb prueba/frase16k.wav piedra
+      - name: reconocer (48 kHz)
+        shell: bash
+        run: |
+          SEP=':'; [ "$RUNNER_OS" = "Windows" ] && SEP=';'
+          CP="prueba/ci${SEP}prueba/main${SEP}prueba/client"
+          for j in prueba/lib/*.jar; do CP="$CP${SEP}$j"; done
+          java -cp "$CP" PruebaVosk vb prueba/frase48k.wav piedra
